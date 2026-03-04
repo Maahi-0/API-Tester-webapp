@@ -1,57 +1,35 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useConvexAuth, useQuery, useMutation } from "convex/react";
-import { useUser, SignInButton, SignUpButton, UserButton } from "@clerk/nextjs";
+import { useUser, useAuth, SignInButton, SignUpButton, UserButton } from "@clerk/nextjs";
 import { api } from "../../convex/_generated/api";
 import Sidebar from "../components/Sidebar";
 import RequestBuilder from "../components/RequestBuilder";
 import ResponseViewer from "../components/ResponseViewer";
 
 export default function Home() {
-  const { isAuthenticated, isLoading: isConvexLoading } = useConvexAuth();
-  const { user, isLoaded: isUserLoaded, isSignedIn } = useUser();
+  const { isAuthenticated } = useConvexAuth();
+  const { isSignedIn } = useAuth();
+  const { user, isLoaded } = useUser();
+  // Use Clerk's isSignedIn as primary auth gate — it's always in sync with the session.
+  const isUserReady = isLoaded && isSignedIn;
   const [activeRequest, setActiveRequest] = useState(null);
   const [response, setResponse] = useState(null);
   const [sending, setSending] = useState(false);
 
-  // Debug logging
-  useEffect(() => {
-    console.log("Auth State:", {
-      isConvexLoading,
-      isAuthenticated,
-      isUserLoaded,
-      isSignedIn,
-      userId: user?.id,
-    });
-  }, [isConvexLoading, isAuthenticated, isUserLoaded, isSignedIn, user?.id]);
-
-  // Convex data — skip queries until user is authenticated
+  // Convex data — run when Clerk confirms the user is signed in
   const history = useQuery(
     api.functions.getRequestHistory,
-    isAuthenticated && user?.id ? { userId: user.id } : "skip",
+    isUserReady && user?.id ? { userId: user.id } : "skip",
   );
   const collections = useQuery(
     api.functions.getCollections,
-    isAuthenticated && user?.id ? { userId: user.id } : "skip",
+    isUserReady && user?.id ? { userId: user.id } : "skip",
   );
 
   // Convex mutations
   const saveRequest = useMutation(api.functions.saveRequest);
   const createCollectionMutation = useMutation(api.functions.createCollection);
-  const syncUserMutation = useMutation(api.functions.syncUser);
-
-  // Sync user with Convex on login
-  useEffect(() => {
-    if (isAuthenticated && user?.id && syncUserMutation) {
-      syncUserMutation({
-        userId: user.id,
-        email: user.emailAddresses[0]?.emailAddress || "",
-        name: user.fullName || user.username || "User",
-      }).catch((err) => {
-        console.error("Error syncing user:", err);
-      });
-    }
-  }, [isAuthenticated, user, syncUserMutation]);
 
   const handleSendRequest = async (requestData) => {
     setSending(true);
@@ -65,7 +43,6 @@ export default function Home() {
       const data = await res.json();
       setResponse(data);
 
-      // Save to Convex history
       if (user) {
         await saveRequest({
           userId: user.id,
@@ -105,11 +82,8 @@ export default function Home() {
     }
   };
 
-  // Loading state
-  const isLoading = isConvexLoading || !isUserLoaded;
-  const isSyncing = isUserLoaded && isSignedIn && !isAuthenticated;
-
-  if (isLoading) {
+  // Loading — wait for Clerk to resolve the session
+  if (!isLoaded) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#FDFCF8]">
         <div className="flex flex-col items-center gap-4">
@@ -120,11 +94,10 @@ export default function Home() {
     );
   }
 
-  // Not authenticated — show sign in / sign up
-  if (!isAuthenticated) {
+  // Not authenticated — only show landing page when Clerk confirms no session
+  if (!isUserReady) {
     return (
       <div className="flex min-h-screen flex-col bg-[#FDFCF8]">
-        {/* Header */}
         <header className="flex items-center justify-between px-8 py-6">
           <div className="flex items-center gap-2">
             <svg
@@ -137,12 +110,12 @@ export default function Home() {
             <span className="font-medium text-[#1a1a1a]">API Tester</span>
           </div>
           <div className="flex items-center gap-4">
-            <SignInButton mode="modal">
+            <SignInButton>
               <button className="text-sm font-medium text-[#6b6b6b] transition hover:text-[#1a1a1a]">
                 Sign In
               </button>
             </SignInButton>
-            <SignUpButton mode="modal">
+            <SignUpButton>
               <button className="rounded-lg bg-[#D97757] px-5 py-2 text-sm font-medium text-white transition hover:bg-[#C46745]">
                 Get Started
               </button>
@@ -150,7 +123,6 @@ export default function Home() {
           </div>
         </header>
 
-        {/* Hero */}
         <main className="flex flex-1 items-center justify-center px-4 py-12">
           <div className="w-full max-w-2xl text-center">
             <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#E8E6E1] bg-white px-4 py-2 text-sm text-[#6b6b6b]">
@@ -167,19 +139,18 @@ export default function Home() {
               collections, track history — all synced in real-time.
             </p>
             <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
-              <SignUpButton mode="modal">
+              <SignUpButton>
                 <button className="rounded-xl bg-[#D97757] px-8 py-3.5 font-medium text-white shadow-sm transition hover:bg-[#C46745]">
                   Create free account
                 </button>
               </SignUpButton>
-              <SignInButton mode="modal">
+              <SignInButton>
                 <button className="rounded-xl border border-[#E8E6E1] bg-white px-8 py-3.5 font-medium text-[#1a1a1a] transition hover:bg-[#FDFCF8]">
                   Sign in
                 </button>
               </SignInButton>
             </div>
 
-            {/* Feature pills */}
             <div className="mt-16 flex flex-wrap justify-center gap-3">
               {[
                 "🔐 Clerk Auth",
@@ -206,7 +177,7 @@ export default function Home() {
     );
   }
 
-  // Authenticated — main app
+  // Authenticated - main app
   return (
     <div className="flex h-screen bg-[#FDFCF8]">
       <Sidebar
@@ -214,7 +185,7 @@ export default function Home() {
         collections={collections || []}
         onSelectHistory={handleSelectHistory}
         userName={user?.emailAddresses?.[0]?.emailAddress || user?.fullName}
-        onLogout={() => {}} // Clerk handles sign out via UserButton
+        onLogout={() => { }}
         onCreateCollection={handleCreateCollection}
       />
 
@@ -236,7 +207,6 @@ export default function Home() {
             <span className="rounded-full bg-[#F5F3F0] px-4 py-1.5 text-xs font-medium text-[#6b6b6b]">
               {user?.emailAddresses?.[0]?.emailAddress}
             </span>
-            {/* Clerk's UserButton handles sign out */}
             <UserButton afterSignOutUrl="/" />
           </div>
         </header>
