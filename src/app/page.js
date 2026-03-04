@@ -8,20 +8,31 @@ import RequestBuilder from "../components/RequestBuilder";
 import ResponseViewer from "../components/ResponseViewer";
 
 export default function Home() {
-  const { isAuthenticated, isLoading } = useConvexAuth();
+  const { isAuthenticated, isLoading: isConvexLoading } = useConvexAuth();
   const { user, isLoaded: isUserLoaded, isSignedIn } = useUser();
   const [activeRequest, setActiveRequest] = useState(null);
   const [response, setResponse] = useState(null);
   const [sending, setSending] = useState(false);
 
+  // Debug logging
+  useEffect(() => {
+    console.log("Auth State:", {
+      isConvexLoading,
+      isAuthenticated,
+      isUserLoaded,
+      isSignedIn,
+      userId: user?.id,
+    });
+  }, [isConvexLoading, isAuthenticated, isUserLoaded, isSignedIn, user?.id]);
+
   // Convex data — skip queries until user is authenticated
   const history = useQuery(
     api.functions.getRequestHistory,
-    isAuthenticated ? { userId: user?.id } : "skip",
+    isAuthenticated && user?.id ? { userId: user.id } : "skip",
   );
   const collections = useQuery(
     api.functions.getCollections,
-    isAuthenticated ? { userId: user?.id } : "skip",
+    isAuthenticated && user?.id ? { userId: user.id } : "skip",
   );
 
   // Convex mutations
@@ -31,12 +42,14 @@ export default function Home() {
 
   // Sync user with Convex on login
   useEffect(() => {
-    if (isAuthenticated && user?.id) {
+    if (isAuthenticated && user?.id && syncUserMutation) {
       syncUserMutation({
         userId: user.id,
         email: user.emailAddresses[0]?.emailAddress || "",
         name: user.fullName || user.username || "User",
-      }).catch(console.error);
+      }).catch((err) => {
+        console.error("Error syncing user:", err);
+      });
     }
   }, [isAuthenticated, user, syncUserMutation]);
 
@@ -93,13 +106,15 @@ export default function Home() {
   };
 
   // Loading state
-  const isSyncing = isSignedIn && !isAuthenticated;
-  if (isLoading || !isUserLoaded || isSyncing) {
+  const isLoading = isConvexLoading || !isUserLoaded;
+  const isSyncing = isUserLoaded && isSignedIn && !isAuthenticated;
+
+  if (isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#FDFCF8]">
         <div className="flex flex-col items-center gap-4">
           <div className="h-12 w-12 animate-spin rounded-full border-t-2 border-b-2 border-[#D97757]"></div>
-          {isSyncing && <p className="text-sm text-[#6b6b6b] animate-pulse">Connecting to workspace...</p>}
+          <p className="animate-pulse text-sm text-[#6b6b6b]">Loading...</p>
         </div>
       </div>
     );
@@ -148,8 +163,8 @@ export default function Home() {
               <span className="text-[#D97757]">save everything</span>
             </h1>
             <p className="mb-10 text-lg text-[#6b6b6b]">
-              A beautiful API testing workspace. Make requests, save collections,
-              track history — all synced in real-time.
+              A beautiful API testing workspace. Make requests, save
+              collections, track history — all synced in real-time.
             </p>
             <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
               <SignUpButton mode="modal">
@@ -199,7 +214,7 @@ export default function Home() {
         collections={collections || []}
         onSelectHistory={handleSelectHistory}
         userName={user?.emailAddresses?.[0]?.emailAddress || user?.fullName}
-        onLogout={() => { }} // Clerk handles sign out via UserButton
+        onLogout={() => {}} // Clerk handles sign out via UserButton
         onCreateCollection={handleCreateCollection}
       />
 

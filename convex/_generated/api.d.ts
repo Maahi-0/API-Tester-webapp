@@ -8,6 +8,7 @@
  * @module
  */
 
+import type * as _authentication from "../_authentication.js";
 import type * as functions from "../functions.js";
 
 import type {
@@ -17,6 +18,7 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  _authentication: typeof _authentication;
   functions: typeof functions;
 }>;
 
