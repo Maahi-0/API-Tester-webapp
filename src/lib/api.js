@@ -1,118 +1,41 @@
-import {
-  databases,
-  ID,
-  Query,
-  DATABASE_ID,
-  REQUESTS_COLLECTION_ID,
-  COLLECTIONS_COLLECTION_ID,
-  USERS_COLLECTION_ID,
-} from "./appwrite";
-import { Permission, Role } from "appwrite";
+// Convex API service wrapper
+// Note: In Convex, you typically use useQuery and useMutation hooks directly in components
+// This file is kept for non-React usage or can be refactored later
 
 export const apiService = {
+  // This file is deprecated - use Convex hooks directly in components
+  // See convex/functions.js for available mutations and queries
+
   // Users
-  async createUser(userId, email, name) {
-    try {
-      return await databases.createDocument(
-        DATABASE_ID,
-        USERS_COLLECTION_ID,
-        userId, // Use the same ID as the Auth user
-        {
-          userId,
-          email,
-          name,
-          createdAt: new Date().toISOString(),
-        },
-        [
-          Permission.read(Role.user(userId)),
-          Permission.update(Role.user(userId)),
-          Permission.delete(Role.user(userId)),
-        ],
-      );
-    } catch (error) {
-      console.error("Error creating user document:", error);
-      throw error;
-    }
+  async createUser(ctx, userId, email, name) {
+    console.warn(
+      "apiService is deprecated. Use useMutation from convex/react instead."
+    );
   },
 
   // Requests
-  async saveRequest(requestData) {
-    try {
-      return await databases.createDocument(
-        DATABASE_ID,
-        REQUESTS_COLLECTION_ID,
-        ID.unique(),
-        {
-          ...requestData,
-          createdAt: new Date().toISOString(),
-        },
-        [
-          Permission.read(Role.user(requestData.userId)),
-          Permission.create(Role.user(requestData.userId)),
-          Permission.update(Role.user(requestData.userId)),
-          Permission.delete(Role.user(requestData.userId)),
-        ],
-      );
-    } catch (error) {
-      console.error("Error saving request:", error);
-      throw error;
-    }
+  async saveRequest(ctx, requestData) {
+    console.warn(
+      "apiService is deprecated. Use useMutation from convex/react instead."
+    );
   },
 
-  async getRequestHistory(userId) {
-    try {
-      const response = await databases.listDocuments(
-        DATABASE_ID,
-        REQUESTS_COLLECTION_ID,
-        [
-          Query.equal("userId", userId),
-          Query.orderDesc("createdAt"),
-          Query.limit(50),
-        ],
-      );
-      return response.documents;
-    } catch (error) {
-      console.error("Error fetching history:", error);
-      return [];
-    }
+  async getRequestHistory(ctx, userId) {
+    console.warn(
+      "apiService is deprecated. Use useQuery from convex/react instead."
+    );
   },
 
   // Collections
-  async getCollections(userId) {
-    try {
-      const response = await databases.listDocuments(
-        DATABASE_ID,
-        COLLECTIONS_COLLECTION_ID,
-        [Query.equal("userId", userId), Query.orderDesc("createdAt")],
-      );
-      return response.documents;
-    } catch (error) {
-      console.error("Error fetching collections:", error);
-      return [];
-    }
+  async getCollections(ctx, userId) {
+    console.warn(
+      "apiService is deprecated. Use useQuery from convex/react instead."
+    );
   },
 
-  async createCollection(userId, name) {
-    try {
-      return await databases.createDocument(
-        DATABASE_ID,
-        COLLECTIONS_COLLECTION_ID,
-        ID.unique(),
-        {
-          userId,
-          name,
-          createdAt: new Date().toISOString(),
-        },
-        [
-          Permission.read(Role.user(userId)),
-          Permission.create(Role.user(userId)),
-          Permission.update(Role.user(userId)),
-          Permission.delete(Role.user(userId)),
-        ],
-      );
-    } catch (error) {
-      console.error("Error creating collection:", error);
-      throw error;
-    }
+  async createCollection(ctx, userId, name) {
+    console.warn(
+      "apiService is deprecated. Use useMutation from convex/react instead."
+    );
   },
 };

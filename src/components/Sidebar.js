@@ -59,14 +59,13 @@ const Sidebar = ({
             ) : (
               history.map((item) => (
                 <button
-                  key={item.$id}
+                  key={item._id}
                   onClick={() => onSelectHistory(item)}
                   className="group flex w-full flex-col gap-2 rounded-lg border border-transparent p-3 text-left transition-all hover:border-[#E8E6E1] hover:bg-[#FDFCF8]"
                 >
                   <div className="flex items-center justify-between gap-2">
                     <span
-                      className={`rounded px-2 py-1 text-[10px] font-semibold ${
-                        item.method === "GET"
+                      className={`rounded px-2 py-1 text-[10px] font-semibold ${item.method === "GET"
                           ? "bg-[#E8F5E9] text-[#2E7D32]"
                           : item.method === "POST"
                             ? "bg-[#E3F2FD] text-[#1976D2]"
@@ -75,7 +74,7 @@ const Sidebar = ({
                               : item.method === "DELETE"
                                 ? "bg-[#FFEBEE] text-[#C62828]"
                                 : "bg-[#F5F5F5] text-[#616161]"
-                      }`}
+                        }`}
                     >
                       {item.method}
                     </span>
@@ -99,7 +98,7 @@ const Sidebar = ({
             ) : (
               collections.map((col) => (
                 <div
-                  key={col.$id}
+                  key={col._id}
                   className="group flex cursor-pointer items-center gap-3 rounded-lg border border-transparent p-3 transition-all hover:border-[#E8E6E1] hover:bg-[#FDFCF8]"
                 >
                   <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#F5F3F0] transition-colors group-hover:bg-[#D97757] group-hover:text-white">
