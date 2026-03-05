@@ -89,9 +89,9 @@ const RequestBuilder = ({ onSend, loading, initialData, collections }) => {
             onChange={(e) => setCollectionId(e.target.value)}
             className="rounded-md border border-[#E8E6E1] bg-[#F5F3F0] px-3 py-1.5 text-xs font-medium text-[#1a1a1a] transition-all outline-none focus:border-[#D97757] focus:ring-1 focus:ring-[#D97757]"
           >
-            <option value="">No Collection</option>
+            <option key="none" value="">No Collection</option>
             {collections?.map((c) => (
-              <option key={c.$id} value={c.$id}>
+              <option key={c._id} value={c._id}>
                 {c.name}
               </option>
             ))}

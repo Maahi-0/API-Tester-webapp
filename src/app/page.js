@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useConvexAuth, useQuery, useMutation } from "convex/react";
-import { useUser, useAuth, SignInButton, SignUpButton, UserButton } from "@clerk/nextjs";
+import { useUser, useAuth, SignInButton, SignUpButton, UserButton, useClerk } from "@clerk/nextjs";
 import { api } from "../../convex/_generated/api";
 import Sidebar from "../components/Sidebar";
 import RequestBuilder from "../components/RequestBuilder";
